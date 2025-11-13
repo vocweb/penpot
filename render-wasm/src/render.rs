@@ -1144,6 +1144,7 @@ impl RenderState {
     fn render_drop_black_shadow(
         &mut self,
         shape: &Shape,
+        shape_bounds: &Rect,
         shadow: &Shadow,
         clip_bounds: Option<(Rect, Option<Corners>, Matrix)>,
         scale: f32,
@@ -1153,12 +1154,20 @@ impl RenderState {
         transformed_shadow.to_mut().offset = (0.0, 0.0);
         transformed_shadow.to_mut().color = skia::Color::BLACK;
 
-        // Scale blur to maintain consistent appearance across zoom levels
-        // When canvas is scaled down (zoom out), blur should be scaled down too
-        transformed_shadow.to_mut().blur = shadow.blur * scale;
-        transformed_shadow.to_mut().spread = shadow.spread * scale;
-
         let mut plain_shape = Cow::Borrowed(shape);
+        let blur_filter = shape.image_filter(1.);
+
+        let mut transform_matrix = shape.transform;
+        let center = shape.center();
+        // Re-center the matrix so rotations/scales happen around the shape center,
+        // matching how the shape itself is rendered.
+        transform_matrix.post_translate(center);
+        transform_matrix.pre_translate(-center);
+
+        // Transform the local shadow offset into world coordinates so that rotations/scales
+        // applied to the shape are respected when positioning the shadow.
+        let mapped = transform_matrix.map_vector((shadow.offset.0, shadow.offset.1));
+        let world_offset = (mapped.x, mapped.y);
 
         // The opacity of fills and strokes shouldn't affect the shadow,
         // so we paint everything black with the same opacity
@@ -1181,34 +1190,89 @@ impl RenderState {
             });
         }
 
-        let mut shadow_paint = skia::Paint::default();
-        shadow_paint.set_image_filter(transformed_shadow.get_drop_shadow_filter());
-        shadow_paint.set_blend_mode(skia::BlendMode::SrcOver);
+        plain_shape.to_mut().clear_shadows();
+        plain_shape.to_mut().blur = None;
 
-        let layer_rec = skia::canvas::SaveLayerRec::default().paint(&shadow_paint);
-        self.surfaces
-            .canvas(SurfaceId::DropShadows)
-            .save_layer(&layer_rec);
-        self.surfaces
-            .canvas(SurfaceId::DropShadows)
-            .scale((scale, scale));
-        self.surfaces
-            .canvas(SurfaceId::DropShadows)
-            .translate(translation);
+        let Some(drop_filter) = transformed_shadow.get_drop_shadow_filter() else {
+            return;
+        };
 
-        self.render_shape(
-            &plain_shape,
-            clip_bounds,
-            SurfaceId::DropShadows,
-            SurfaceId::DropShadows,
-            SurfaceId::DropShadows,
-            SurfaceId::DropShadows,
-            false,
-            Some((shadow.offset.0, shadow.offset.1)),
-            None,
-        );
+        let mut bounds = drop_filter.compute_fast_bounds(shape_bounds);
+        // Account for the shadow offset so the temporary surface fully contains the shifted blur.
+        bounds.offset(world_offset);
 
-        self.surfaces.canvas(SurfaceId::DropShadows).restore();
+        let filter_result =
+            filters::render_into_filter_surface(self, bounds, |state, temp_surface| {
+                {
+                    let canvas = state.surfaces.canvas(temp_surface);
+
+                    let mut shadow_paint = skia::Paint::default();
+                    shadow_paint.set_image_filter(drop_filter.clone());
+                    shadow_paint.set_blend_mode(skia::BlendMode::SrcOver);
+
+                    let layer_rec = skia::canvas::SaveLayerRec::default().paint(&shadow_paint);
+                    canvas.save_layer(&layer_rec);
+                }
+
+                state.render_shape(
+                    &plain_shape,
+                    clip_bounds,
+                    temp_surface,
+                    temp_surface,
+                    temp_surface,
+                    temp_surface,
+                    false,
+                    Some(shadow.offset),
+                    None,
+                );
+
+                {
+                    let canvas = state.surfaces.canvas(temp_surface);
+                    canvas.restore();
+                }
+            });
+
+        if let Some((image, filter_scale)) = filter_result {
+            let drop_canvas = self.surfaces.canvas(SurfaceId::DropShadows);
+            drop_canvas.save();
+            drop_canvas.scale((scale, scale));
+            drop_canvas.translate(translation);
+            let mut drop_paint = skia::Paint::default();
+            drop_paint.set_image_filter(blur_filter.clone());
+
+            // If we scaled down in the filter surface, we need to scale back up
+            if filter_scale < 1.0 {
+                let scaled_width = bounds.width() * filter_scale;
+                let scaled_height = bounds.height() * filter_scale;
+                let src_rect = skia::Rect::from_xywh(0.0, 0.0, scaled_width, scaled_height);
+
+                drop_canvas.save();
+                drop_canvas.scale((1.0 / filter_scale, 1.0 / filter_scale));
+                drop_canvas.draw_image_rect_with_sampling_options(
+                    image,
+                    Some((&src_rect, skia::canvas::SrcRectConstraint::Strict)),
+                    skia::Rect::from_xywh(
+                        bounds.left * filter_scale,
+                        bounds.top * filter_scale,
+                        scaled_width,
+                        scaled_height,
+                    ),
+                    self.sampling_options,
+                    &drop_paint,
+                );
+                drop_canvas.restore();
+            } else {
+                let src_rect = skia::Rect::from_xywh(0.0, 0.0, bounds.width(), bounds.height());
+                drop_canvas.draw_image_rect_with_sampling_options(
+                    image,
+                    Some((&src_rect, skia::canvas::SrcRectConstraint::Strict)),
+                    bounds,
+                    self.sampling_options,
+                    &drop_paint,
+                );
+            }
+            drop_canvas.restore();
+        }
     }
 
     pub fn render_shape_tree_partial_uncached(
@@ -1302,6 +1366,7 @@ impl RenderState {
                         // First pass: Render shadow in black to establish alpha mask
                         self.render_drop_black_shadow(
                             element,
+                            &element.extrect(tree, scale),
                             shadow,
                             clip_bounds,
                             scale,
@@ -1322,6 +1387,7 @@ impl RenderState {
                                 if !matches!(shadow_shape.shape_type, Type::Text(_)) {
                                     self.render_drop_black_shadow(
                                         shadow_shape,
+                                        &shadow_shape.extrect(tree, scale),
                                         shadow,
                                         clip_bounds,
                                         scale,

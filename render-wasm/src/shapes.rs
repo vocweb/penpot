@@ -830,14 +830,28 @@ impl Shape {
     }
 
     fn apply_stroke_bounds(&self, rect: math::Rect, stroke_width: f32) -> math::Rect {
-        let mut expanded_rect = rect;
-        expanded_rect.left -= stroke_width;
-        expanded_rect.right += stroke_width;
-        expanded_rect.top -= stroke_width;
-        expanded_rect.bottom += stroke_width;
-
         let mut result = rect;
-        result.join(expanded_rect);
+        if stroke_width > 0.0 {
+            let mut expanded_rect = rect;
+            expanded_rect.inset((-stroke_width, -stroke_width));
+            result.join(expanded_rect);
+        }
+
+        let cap_margin = self.cap_bounds_margin();
+        if cap_margin > 0.0 {
+            let mut cap_rect = rect;
+            cap_rect.inset((-cap_margin, -cap_margin));
+            result.join(cap_rect);
+        }
+
+        result
+    }
+
+    fn apply_cap_bounds(&self, rect: math::Rect, cap_margin: f32) -> math::Rect {
+        let mut result = rect;
+        if cap_margin > 0.0 {
+            result.inset((-cap_margin, -cap_margin));
+        }
         result
     }
 
@@ -943,11 +957,14 @@ impl Shape {
         let mut rect = match &shape.shape_type {
             Type::Path(_) | Type::Bool(_) => {
                 if let Some(path) = shape.get_skia_path() {
-                    return path
+                    let cap_margin = shape.cap_bounds_margin();
+                    let rect = path
                         .compute_tight_bounds()
                         .with_outset((max_stroke, max_stroke));
+                    self.apply_cap_bounds(rect, cap_margin)
+                } else {
+                    shape.bounds().to_rect()
                 }
-                shape.bounds().to_rect()
             }
             Type::Text(text_content) => {
                 // FIXME: we need to recalculate the text bounds here because the shape's selrect
@@ -976,6 +993,16 @@ impl Shape {
 
     pub fn clip(&self) -> bool {
         self.clip_content
+    }
+
+    pub fn cap_bounds_margin(&self) -> f32 {
+        if !self.is_open() {
+            return 0.0;
+        }
+        self.strokes
+            .iter()
+            .map(|stroke| stroke.cap_bounds_margin())
+            .fold(0.0, f32::max)
     }
 
     pub fn mask_id(&self) -> Option<&Uuid> {
