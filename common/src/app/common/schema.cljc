@@ -948,7 +948,8 @@
 
 (register!
  {:type ::text
-  :pred #(and (string? %) (not (str/blank? %)))
+  ;; :pred #(and (string? %) (not (str/blank? %)))
+  :pred string?
   :property-pred
   (fn [{:keys [min max] :as props}]
     (if (seq props)

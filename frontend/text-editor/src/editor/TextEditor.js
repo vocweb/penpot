@@ -142,6 +142,7 @@ export class TextEditor extends EventTarget {
    */
   #setupRoot() {
     this.#root = createEmptyRoot(this.#styleDefaults);
+    console.log("🥶 setupRoot: ROOT", this.#root);
     this.#element.appendChild(this.#root);
   }
 
@@ -198,7 +199,7 @@ export class TextEditor extends EventTarget {
     const rotation = transform?.rotation ?? 0.0;
     const scale = transform?.scale ?? 1.0;
     this.#updatePositionFromCanvas();
-    this.#element.style.transformOrigin = 'top left';
+    this.#element.style.transformOrigin = "top left";
     this.#element.style.transform = `scale(${scale}) translate(${x}px, ${y}px) rotate(${rotation}deg)`;
   }
 
@@ -214,7 +215,7 @@ export class TextEditor extends EventTarget {
       y: viewport.y + shape.selrect.y,
       rotation: shape.rotation,
       scale: viewport.zoom,
-    })
+    });
   }
 
   /**

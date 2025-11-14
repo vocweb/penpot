@@ -357,6 +357,7 @@ export class SelectionController extends EventTarget {
   #notifyStyleChange() {
     const textSpan = this.focusTextSpan;
     if (textSpan) {
+      console.log("🥶 notifyStyleChange: TEXT SPAN", textSpan);
       this.#updateCurrentStyle(textSpan);
       this.dispatchEvent(
         new CustomEvent("stylechange", {
@@ -368,6 +369,7 @@ export class SelectionController extends EventTarget {
         this.#textEditor.root?.firstElementChild?.firstElementChild;
       if (firstTextSpan) {
         this.#updateCurrentStyle(firstTextSpan);
+        console.log("🥶 notifyStyleChange: FIRST TEXT SPAN", firstTextSpan);
         this.dispatchEvent(
           new CustomEvent("stylechange", {
             detail: this.#currentStyle,
@@ -1766,6 +1768,7 @@ export class SelectionController extends EventTarget {
     // Applies the necessary styles to the root element.
     const root = this.#textEditor.root;
     setRootStyles(root, newStyles);
+    console.log("😡 applyStylesTo: ROOT", newStyles);
 
     // If the startContainer and endContainer are the same
     // node, then we can apply styles directly to that

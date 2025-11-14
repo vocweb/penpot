@@ -115,6 +115,7 @@
         on-style-change
         (fn [event]
           (let [styles (styles/get-styles-from-event event)]
+            (js/console.log "on-style-change" (clj->js styles))
             (st/emit! (dwt/v2-update-text-editor-styles shape-id styles))))
 
         on-needs-layout
