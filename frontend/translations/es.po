@@ -38,6 +38,10 @@ msgstr "El desenfoque (blur) de la sombra debe ser mayor o igual a 0."
 msgid "workspace.tokens.invalid-shadow-type-token-value"
 msgstr "Tipo de sombra no válida: solo se aceptan 'innerShadow' o 'dropShadow'"
 
+#: src/app/main/data/workspace/tokens/errors.cljs:81
+msgid "workspace.tokens.invalid-text-case-token-value"
+msgstr "Valor de token no válido: solo none, Uppercase, Lowercase or Capitalize son aceptados "
+
 #: src/app/main/ui/workspace/tokens/management/create/form.cljs:1037
 msgid "workspace.tokens.shadow-add-shadow"
 msgstr "Añadir Sombra"
