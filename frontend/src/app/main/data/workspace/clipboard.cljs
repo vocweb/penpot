@@ -288,7 +288,7 @@
   (ptk/reify ::paste-from-clipboard
     ptk/WatchEvent
     (watch [_ _ _]
-      (->> (clipboard/from-clipboard)
+      (->> (clipboard/from-dom-api)
            (rx/mapcat default-paste-from-blob)
            (rx/take 1)))))
 
@@ -306,7 +306,7 @@
         ;; we forbid that scenario so the default behaviour is executed
         (if is-editing?
           (rx/empty)
-          (->> (clipboard/from-synthetic-clipboard-event event)
+          (->> (clipboard/from-synthetic-event event)
                (rx/mapcat (create-paste-from-blob in-viewport?))))))))
 
 (defn copy-selected-svg
@@ -476,7 +476,7 @@
                       (js/console.error "Clipboard error:" cause))
                     (rx/empty)))]
 
-          (->> (clipboard/from-clipboard)
+          (->> (clipboard/from-dom-api)
                (rx/mapcat #(.text %))
                (rx/map decode-entry)
                (rx/take 1)
@@ -944,8 +944,7 @@
 
 (defn- paste-html-text
   [html]
-  (js/console.log html)
-  (dm/assert! (string? html))
+  (assert (string? html))
   (ptk/reify ::paste-html-text
     ptk/WatchEvent
     (watch [_ state  _]
@@ -953,9 +952,7 @@
             root    (dwtxt/create-root-from-html html style)
             text    (.-textContent root)
             content (tc/dom->cljs root)]
-        (js/console.log "root" root "content" content)
         (when (types.text/valid-content? content)
-          (js/console.log "valid-content")
           (let [id     (uuid/next)
                 width  (max 8 (min (* 7 (count text)) 700))
                 height 16
