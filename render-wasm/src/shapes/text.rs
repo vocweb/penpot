@@ -189,6 +189,7 @@ impl TextContentLayout {
  * Check if the current x,y (in paragraph relative coordinates) is inside
  * the paragraph
  */
+#[allow(dead_code)]
 fn intersects(paragraph: &skia_safe::textlayout::Paragraph, x: f32, y: f32) -> bool {
     if y < 0.0 || y > paragraph.height() {
         return false;
@@ -694,7 +695,8 @@ impl TextContent {
     }
 
     pub fn intersect_position(&self, shape: &Shape, x_pos: f32, y_pos: f32) -> bool {
-        let rect = self.content_rect(&shape.selrect, shape.vertical_align);
+        // Use the full selrect instead of just the content rect for text selection
+        let rect = shape.selrect;
         let mut matrix = Matrix::new_identity();
         let center = shape.center();
         let Some(inv_transform) = &shape.transform.invert() else {
@@ -706,27 +708,11 @@ impl TextContent {
 
         let result = matrix.map_point((x_pos, y_pos));
 
-        // Change coords to content space
-        let x_pos = result.x - rect.x();
-        let y_pos = result.y - rect.y();
+        // Check if the click is within the full selrect area
+        let x_pos = result.x;
+        let y_pos = result.y;
 
-        let width = self.width();
-        let mut paragraph_builders = self.paragraph_builder_group_from_text(None);
-        let paragraphs =
-            self.build_paragraphs_from_paragraph_builders(&mut paragraph_builders, width);
-
-        paragraphs
-            .iter()
-            .flatten()
-            .scan(
-                (0 as f32, None::<skia::textlayout::Paragraph>),
-                |(height, _), p| {
-                    let prev_height = *height;
-                    *height += p.height();
-                    Some((prev_height, p))
-                },
-            )
-            .any(|(height, p)| intersects(p, x_pos, y_pos - height))
+        x_pos >= rect.x() && x_pos <= rect.right() && y_pos >= rect.y() && y_pos <= rect.bottom()
     }
 }
 

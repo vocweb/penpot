@@ -341,6 +341,32 @@ pub extern "C" fn get_text_dimensions() -> *mut u8 {
 }
 
 #[no_mangle]
+pub extern "C" fn get_text_selrect() -> *mut u8 {
+    let mut ptr = std::ptr::null_mut();
+
+    with_current_shape_mut!(state, |shape: &mut Shape| {
+        let rect = shape.selrect;
+        // Match the structure of get_text_dimensions: width, height, max_width, x, y
+        let width = rect.width();
+        let height = rect.height();
+        let max_width = width;
+        let x = rect.x();
+        let y = rect.y();
+
+        let mut bytes = vec![0; 20];
+        bytes[0..4].clone_from_slice(&width.to_le_bytes());
+        bytes[4..8].clone_from_slice(&height.to_le_bytes());
+        bytes[8..12].clone_from_slice(&max_width.to_le_bytes());
+        bytes[12..16].clone_from_slice(&x.to_le_bytes());
+        bytes[16..20].clone_from_slice(&y.to_le_bytes());
+
+        ptr = mem::write_bytes(bytes)
+    });
+
+    ptr
+}
+
+#[no_mangle]
 pub extern "C" fn intersect_position(
     a: u32,
     b: u32,

@@ -110,6 +110,7 @@
        (render ts)))))
 
 (declare get-text-dimensions)
+(declare get-text-selrect)
 
 (defn update-text-rect!
   [id]
@@ -117,7 +118,8 @@
    {:cmd :index/update-text-rect
     :page-id (:current-page-id @st/state)
     :shape-id id
-    :dimensions (get-text-dimensions id)}))
+    :dimensions (get-text-selrect id)}))
+
 
 (defn- ensure-text-content
   "Guarantee that the shape always sends a valid text tree to WASM. When the
@@ -831,6 +833,23 @@
      (mem/free)
      {:x x :y y :width width :height height :max-width max-width})))
 
+(defn get-text-selrect
+  ([id]
+   (use-shape id)
+   (get-text-selrect))
+  ([]
+   (let [offset    (-> (h/call wasm/internal-module "_get_text_selrect")
+                       (mem/->offset-32))
+         heapf32   (mem/get-heap-f32)
+         width     (aget heapf32 (+ offset 0))
+         height    (aget heapf32 (+ offset 1))
+         max-width (aget heapf32 (+ offset 2))
+
+         x (aget heapf32 (+ offset 3))
+         y (aget heapf32 (+ offset 4))]
+     (mem/free)
+     {:x x :y y :width width :height height :max-width max-width})))
+
 (defn intersect-position
   [id position]
   (let [buffer (uuid/get-u32 id)
@@ -955,7 +974,7 @@
           (mw/emit! {:cmd :index/update-text-rect
                      :page-id (:current-page-id @st/state)
                      :shape-id id
-                     :dimensions (get-text-dimensions id)})))))
+                     :dimensions (get-text-selrect id)})))))
 
 (defn process-pending!
   [shapes thumbnails full]
