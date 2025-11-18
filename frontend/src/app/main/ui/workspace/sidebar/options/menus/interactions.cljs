@@ -77,7 +77,7 @@
 (def flow-for-rename-ref
   (l/derived (l/in [:workspace-local :flow-for-rename]) st/state))
 
-(mf/defc flow-item
+(mf/defc flow-item*
   [{:keys [flow]}]
   (let [editing?         (mf/use-state false)
         flow-for-rename  (mf/deref flow-for-rename-ref)
@@ -156,7 +156,7 @@
                        :on-click remove-flow
                        :icon i/remove}]]))
 
-(mf/defc page-flows
+(mf/defc page-flows*
   {::mf/props :obj}
   [{:keys [flows]}]
   (when flows
@@ -165,10 +165,9 @@
                      :title       (tr "workspace.options.flows.flow-starts")
                      :class       (stl/css :title-spacing-layout-flow)}]
      (for [[id flow] flows]
-       [:& flow-item {:flow flow :key (dm/str id)}])]))
+       [:> flow-item* {:flow flow :key (dm/str id)}])]))
 
-(mf/defc shape-flows
-  {::mf/props :obj}
+(mf/defc shape-flows*
   [{:keys [flows shape]}]
   (when (cfh/frame-shape? shape)
     (let [flow     (ctp/get-frame-flow flows (:id shape))
@@ -185,7 +184,7 @@
                             :icon i/add}])]
 
        (when (some? flow)
-         [:& flow-item {:flow flow :key (dm/str (:id flow))}])])))
+         [:> flow-item* {:flow flow :key (dm/str (:id flow))}])])))
 
 (def ^:private corner-center-icon
   (deprecated-icon/icon-xref :corner-center (stl/css :corner-icon)))
@@ -202,7 +201,7 @@
 (def ^:private corner-topright-icon
   (deprecated-icon/icon-xref :corner-top-right (stl/css :corner-icon)))
 
-(mf/defc interaction-entry
+(mf/defc interaction-entry*
   [{:keys [index shape interaction update-interaction remove-interaction]}]
   (let [objects              (deref refs/workspace-page-objects)
         destination          (get objects (:destination interaction))
@@ -722,9 +721,9 @@
           (st/emit! (dwi/update-interaction shape index update-fn)))]
     [:div {:class (stl/css :interactions-content)}
      (if shape
-       [:& shape-flows {:flows flows
-                        :shape shape}]
-       [:& page-flows {:flows flows}])
+       [:> shape-flows* {:flows flows
+                         :shape shape}]
+       [:> page-flows* {:flows flows}])
      [:div {:class (stl/css :interaction-options)}
       (when (and shape (not (cfh/unframed-shape? shape)))
         [:div {:class (stl/css :element-title)}
@@ -754,10 +753,10 @@
            (tr "workspace.options.use-play-button")]]])
       [:div {:class (stl/css :groups)}
        (for [[index interaction] (d/enumerate interactions)]
-         [:& interaction-entry {:key (dm/str (:id shape) "-" index)
-                                :index index
-                                :shape shape
-                                :interaction interaction
-                                :update-interaction update-interaction
-                                :remove-interaction remove-interaction}])]]]))
+         [:> interaction-entry* {:key (dm/str (:id shape) "-" index)
+                                 :index index
+                                 :shape shape
+                                 :interaction interaction
+                                 :update-interaction update-interaction
+                                 :remove-interaction remove-interaction}])]]]))
 
