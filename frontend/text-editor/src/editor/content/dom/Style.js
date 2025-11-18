@@ -161,6 +161,7 @@ export function normalizeStyles(
   // If there's a font-family property and not a --font-id, then
   // we remove the font-family because it will not work.
   const fontFamily = styleDeclaration.getPropertyValue("font-family");
+  console.log("normalizeStyles font-family", fontFamily);
   const fontId = styleDeclaration.getPropertyValue("--font-id");
   if (fontFamily && !fontId) {
     styleDeclaration.removeProperty("font-family");
@@ -205,10 +206,20 @@ export function setStyle(element, styleName, styleValue, styleUnit) {
     typeof styleValue !== "string" &&
     typeof styleValue !== "number"
   ) {
-    if (styleName === "--fills" && styleValue === null) debugger;
     element.style.setProperty(styleName, JSON.stringify(styleValue));
   } else {
-    element.style.setProperty(styleName, styleValue + (styleUnit ?? ""));
+    const needsEscaping =
+      styleName === "font-family" && !styleValue.startsWith('"');
+    if (needsEscaping) {
+      styleValue = `"${styleValue}"`;
+    }
+
+    console.log("setStyle", styleName, styleValue, styleUnit);
+
+    element.style.setProperty(
+      styleName,
+      styleValue + (styleUnit ? styleUnit : ""),
+    );
   }
   return element;
 }
@@ -284,14 +295,32 @@ export function getStyle(element, styleName, styleUnit) {
  * @returns {HTMLElement}
  */
 export function setStylesFromObject(element, allowedStyles, styleObject) {
+  if (element.tagName === "SPAN")
+    console.log("🚀 setStylesFromObject", element, allowedStyles, styleObject);
   for (const [styleName, styleUnit] of allowedStyles) {
     if (!(styleName in styleObject)) {
       continue;
     }
     const styleValue = styleObject[styleName];
-    if (styleValue) {
-      setStyle(element, styleName, styleValue, styleUnit);
+    if (element.tagName === "SPAN") {
+      console.log(
+        "🚀 setStylesFromObject single style",
+        styleName,
+        styleValue,
+        styleUnit,
+      );
     }
+    if (styleValue) {
+      const needsEscaping =
+        styleName === "font-family" && !styleValue.startsWith('"');
+      const escapedValue = needsEscaping ? `"${styleValue}"` : styleValue;
+      if (needsEscaping) console.log("ESCAPED VALUE", escapedValue);
+      // console.log("setStylesFromObject single style", styleName, escapedValue, styleUnit);
+      setStyle(element, styleName, escapedValue, styleUnit);
+    }
+  }
+  if (element.tagName === "SPAN") {
+    console.log("setStylesFromObject font family", element.style.fontFamily);
   }
   return element;
 }
@@ -334,6 +363,12 @@ export function setStylesFromDeclaration(
  */
 export function setStyles(element, allowedStyles, styleObjectOrDeclaration) {
   if (styleObjectOrDeclaration instanceof CSSStyleDeclaration) {
+    console.log(
+      "setStylesFromDeclaration",
+      element,
+      allowedStyles,
+      styleObjectOrDeclaration,
+    );
     return setStylesFromDeclaration(
       element,
       allowedStyles,

@@ -113,6 +113,7 @@
   (ptk/reify ::update-editor
     ptk/UpdateEvent
     (update [_ state]
+      (js/console.log "🎭 update-editor", (clj->js editor))
       (if (some? editor)
         (assoc state :workspace-editor editor)
         (dissoc state :workspace-editor)))))
@@ -957,7 +958,8 @@
       (if (features/active-feature? state "render-wasm/v1")
         (let [objects      (dsh/lookup-page-objects state)
               shape        (get objects id)
-              new-shape?   (nil? (:content shape))]
+              new-shape?   (nil? (:content shape))
+              _ (js/console.log "🎭 v2-update-text-shape-content", (clj->js content))]
           (rx/concat
            (rx/of
             (dwsh/update-shapes

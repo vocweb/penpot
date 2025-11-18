@@ -34,6 +34,7 @@ export function createRandomId() {
  * @returns {HTMLElement}
  */
 export function createElement(tag, options) {
+  console.log("Create element", tag, options);
   const element = document.createElement(tag);
   if (options?.attributes) {
     Object.entries(options.attributes).forEach(([name, value]) =>
@@ -55,6 +56,7 @@ export function createElement(tag, options) {
       element.appendChild(options.children);
     }
   }
+  console.log(">>> Created element", element);
   return element;
 }
 

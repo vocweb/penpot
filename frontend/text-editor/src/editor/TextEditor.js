@@ -90,6 +90,7 @@ export class TextEditor extends EventTarget {
    * @param {HTMLCanvasElement} canvas
    */
   constructor(element, canvas, options) {
+    console.log("🥶 constructor: ELEMENT", element, canvas, options);
     super();
     if (!(element instanceof HTMLElement))
       throw new TypeError("Invalid text editor element");
@@ -142,7 +143,6 @@ export class TextEditor extends EventTarget {
    */
   #setupRoot() {
     this.#root = createEmptyRoot(this.#styleDefaults);
-    console.log("🥶 setupRoot: ROOT", this.#root);
     this.#element.appendChild(this.#root);
   }
 

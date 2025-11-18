@@ -184,6 +184,8 @@
    ::mf/props :obj}
   [{:keys [shape canvas-ref]}]
   (let [content          (:content shape)
+        _ (js/console.log "🥶 text-editor-html: SHAPE", (clj->js shape))
+        _ (js/console.log "🥶 text-editor-html: CONTENT", (clj->js content))
         shape-id         (dm/get-prop shape :id)
         fill-color       (get-color-from-content content)
 
@@ -203,7 +205,9 @@
 
         fonts
         (-> (mf/use-memo (mf/deps content) #(get-fonts content))
-            (h/use-equal-memo))]
+            (h/use-equal-memo))
+
+        _ (js/console.log "🥶 FONTS", (clj->js fonts))]
 
     (mf/with-effect [fonts]
       (load-fonts! fonts))
@@ -299,12 +303,17 @@
         (when (cf/check-browser? :safari-16)
           (mf/deref refs/selected-zoom))
 
+        _ (js/console.log "🥶 text-editor parent component: SHAPE", (clj->js shape))
+
+        _ (js/console.log "🥶 TEXT MODIFIER", (clj->js text-modifier))
         shape (cond-> shape
-                (some? text-modifier)
-                (dwt/apply-text-modifier text-modifier)
+                ;; (some? text-modifier)
+                ;; (dwt/apply-text-modifier text-modifier)
 
                 (some? modifiers)
                 (gsh/transform-shape modifiers))
+        _ (js/console.log "🥶 TEXT MODIFIER AFTER", (clj->js text-modifier))
+
 
         render-wasm? (mf/use-memo #(features/active-feature? @st/state "render-wasm/v1"))
 

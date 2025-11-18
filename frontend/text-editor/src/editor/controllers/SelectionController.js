@@ -261,8 +261,12 @@ export class SelectionController extends EventTarget {
     for (let index = 0; index < element.style.length; index++) {
       const styleName = element.style.item(index);
       const styleValue = element.style.getPropertyValue(styleName);
+      if (styleName === "font-family") {
+        console.log("🍅 applyStylesToCurrentStyle", styleName, styleValue);
+      }
       this.#currentStyle.setProperty(styleName, styleValue);
     }
+    console.log("🍅 applyStylesToCurrentStyle", this.#currentStyle);
   }
 
   /**
@@ -272,6 +276,10 @@ export class SelectionController extends EventTarget {
    * @returns {SelectionController}
    */
   #updateCurrentStyle(textSpan) {
+    if (textSpan.tagName === "SPAN") {
+      console.log("🎭 updateCurrentStyle INITIAL", this.#currentStyle);
+      console.log("🎭 updateCurrentStyle textSpan styles", textSpan.style);
+    }
     this.#applyDefaultStylesToCurrentStyle();
     const root = textSpan.parentElement.parentElement;
     this.#applyStylesToCurrentStyle(root);
@@ -367,9 +375,10 @@ export class SelectionController extends EventTarget {
     } else {
       const firstTextSpan =
         this.#textEditor.root?.firstElementChild?.firstElementChild;
+      console.log("🥶 notifyStyleChange DOM", this.#textEditor.root);
       if (firstTextSpan) {
         this.#updateCurrentStyle(firstTextSpan);
-        console.log("🥶 notifyStyleChange: FIRST TEXT SPAN", firstTextSpan);
+        console.log("🥶 notifyStyleChange: ARGH! TEXT SPAN", firstTextSpan);
         this.dispatchEvent(
           new CustomEvent("stylechange", {
             detail: this.#currentStyle,

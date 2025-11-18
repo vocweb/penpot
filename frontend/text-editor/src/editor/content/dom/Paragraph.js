@@ -141,6 +141,7 @@ export function createEmptyParagraph(styles) {
  * @returns {HTMLDivElement}
  */
 export function setParagraphStyles(element, styles) {
+  console.log("setParagraphStyles", element, styles);
   return setStyles(element, STYLES, styles);
 }
 
