@@ -80,6 +80,9 @@
    ::sse/clone-template
    {:stream? true}
 
+   ::sse/restore-deleted-team-files
+   {:stream? true}
+
    ::sse/import-binfile
    {:stream? true
     :form-data? true}
