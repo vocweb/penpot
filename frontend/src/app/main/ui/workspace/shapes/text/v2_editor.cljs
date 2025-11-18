@@ -74,6 +74,9 @@
         default-font
         (deref refs/default-font)
 
+        _ (js/console.log "🥶 default-font", (clj->js default-font))
+        _ (js/console.log "🥶 default-root-attrs", (clj->js txt/default-root-attrs))
+
         style-defaults
         (styles/get-style-defaults
          (merge
@@ -81,6 +84,9 @@
           {:fills [{:fill-color text-color :fill-opacity 1}]}
           txt/default-root-attrs
           default-font))
+
+        _ (js/console.log "🥶 style-defaults", (clj->js style-defaults))
+        _ (js/console.log "🥶 editor node", (clj->js (.-innerHTML editor-node)))
 
         options
         #js {:styleDefaults style-defaults}
@@ -146,6 +152,7 @@
 
     (st/emit! (dwt/update-editor instance))
     (when (some? content)
+      (js/console.log "🥶 set-editor-root! content", (clj->js content))
       (dwt/set-editor-root! instance (content/cljs->dom content)))
     (when (some? instance)
       (st/emit! (dwt/focus-editor)))

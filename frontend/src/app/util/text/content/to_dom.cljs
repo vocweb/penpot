@@ -44,6 +44,7 @@
        (dom/append-child! element child))
 
      ;; we need to return the DOM element
+     (js/console.log "🚛 create-element element", (clj->js element))
      element)))
 
 (defn get-styles-from-attrs
@@ -52,6 +53,7 @@
                 (fn [acc key]
                   (let [default-value (get defaults key)]
                     (assoc acc key (get node key default-value)))) {} attrs)
+        _ (js/console.log "🦉 get-styles-from-attrs styles", (clj->js styles))
         fills
         (cond
            ;; DEPRECATED: still here for backward compatibility with
@@ -95,7 +97,9 @@
 (defn get-inline-styles
   [inline paragraph]
   (let [node (if (= "" (:text inline)) paragraph inline)
-        styles (get-styles-from-attrs node txt/text-node-attrs txt/default-text-attrs)]
+        _ (js/console.log "🦉 get-inline-styles node", (clj->js node) (clj->js txt/text-node-attrs) (clj->js txt/default-text-attrs))
+        styles (get-styles-from-attrs node txt/text-node-attrs txt/default-text-attrs)
+        _ (js/console.log "COMPUTED STYLES", (clj->js styles))]
     (dissoc styles :line-height)))
 
 (defn normalize-spaces

@@ -260,13 +260,16 @@ export class SelectionController extends EventTarget {
   #applyStylesToCurrentStyle(element) {
     for (let index = 0; index < element.style.length; index++) {
       const styleName = element.style.item(index);
-      const styleValue = element.style.getPropertyValue(styleName);
+      let styleValue = element.style.getPropertyValue(styleName);
       if (styleName === "font-family") {
+        // Ensure font-family is quoted for fonts with numbers (e.g., "Font Awesome 7 Free")
+        if (styleValue && !styleValue.startsWith('"')) {
+          styleValue = `"${styleValue}"`;
+        }
         console.log("🍅 applyStylesToCurrentStyle", styleName, styleValue);
       }
       this.#currentStyle.setProperty(styleName, styleValue);
     }
-    console.log("🍅 applyStylesToCurrentStyle", this.#currentStyle);
   }
 
   /**
@@ -379,6 +382,10 @@ export class SelectionController extends EventTarget {
       if (firstTextSpan) {
         this.#updateCurrentStyle(firstTextSpan);
         console.log("🥶 notifyStyleChange: ARGH! TEXT SPAN", firstTextSpan);
+        console.log(
+          "🎭 notifyStyleChange: ARGH! currentStyle fontFamily",
+          this.#currentStyle.fontFamily,
+        );
         this.dispatchEvent(
           new CustomEvent("stylechange", {
             detail: this.#currentStyle,

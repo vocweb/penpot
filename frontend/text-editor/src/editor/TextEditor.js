@@ -578,6 +578,7 @@ export function getRoot(instance) {
 
 export function setRoot(instance, root) {
   if (isEditor(instance)) {
+    console.log("🔥 setRoot root", root);
     instance.root = root;
   }
 

@@ -25,7 +25,15 @@ export function mergeStyleDeclarations(target, source) {
   // for (const styleName of source) {
   for (let index = 0; index < source.length; index++) {
     const styleName = source.item(index);
-    const styleValue = source.getPropertyValue(styleName);
+    let styleValue = source.getPropertyValue(styleName);
+    // // Ensure font-family is quoted for fonts with numbers (e.g., "Font Awesome 7 Free")
+    // if (
+    //   styleName === "font-family" &&
+    //   styleValue &&
+    //   !styleValue.startsWith('"')
+    // ) {
+    //   styleValue = `"${styleValue}"`;
+    // }
     target.setProperty(styleName, styleValue);
   }
   return target;
@@ -117,11 +125,27 @@ export function getComputedStylePolyfill(element) {
       if (currentValue) {
         const priority = currentElement.style.getPropertyPriority(styleName);
         if (priority === "important") {
-          const newValue = currentElement.style.getPropertyValue(styleName);
+          let newValue = currentElement.style.getPropertyValue(styleName);
+          // // Ensure font-family is quoted for fonts with numbers (e.g., "Font Awesome 7 Free")
+          // if (
+          //   styleName === "font-family" &&
+          //   newValue &&
+          //   !newValue.startsWith('"')
+          // ) {
+          //   newValue = `"${newValue}"`;
+          // }
           inertElement.style.setProperty(styleName, newValue);
         }
       } else {
-        const newValue = currentElement.style.getPropertyValue(styleName);
+        let newValue = currentElement.style.getPropertyValue(styleName);
+        // Ensure font-family is quoted for fonts with numbers (e.g., "Font Awesome 7 Free")
+        if (
+          styleName === "font-family" &&
+          newValue &&
+          !newValue.startsWith('"')
+        ) {
+          newValue = `"${newValue}"`;
+        }
         inertElement.style.setProperty(styleName, newValue);
       }
     }
